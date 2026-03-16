@@ -10,11 +10,10 @@ import os
 # -------------------------
 
 st.set_page_config(page_title="Fundkiste", layout="wide")
-
 st.title("🏫 KI-Fundkiste der Schule")
 
 # -------------------------
-# DATENORDNER ERSTELLEN
+# ORDNER UND DATEN
 # -------------------------
 
 UPLOAD_FOLDER = "uploads"
@@ -22,28 +21,27 @@ DATA_FILE = "data.json"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Wenn data.json noch nicht existiert, anlegen
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump([], f)
 
 # -------------------------
-# YOLO MODELL LADEN
+# YOLO MODEL LADEN
 # -------------------------
 
 @st.cache_resource
 def load_model():
-    return YOLO("yolov8n.pt")
+    return YOLO("yolov8n.pt")  # kleines Modell für Cloud
 
 model = load_model()
 
 # -------------------------
-# BILD ERKENNEN
+# FUNKTION: KI ERKENNUNG
 # -------------------------
 
 def detect_object(image):
-
     results = model(image)
-
     if len(results[0].boxes) > 0:
         cls_id = int(results[0].boxes.cls[0])
         label = model.names[cls_id]
@@ -64,24 +62,24 @@ beschreibung = st.text_input("Beschreibung")
 fundort = st.text_input("Fundort")
 
 # -------------------------
-# FUNDSTÜCK SPEICHERN
+# FUNKTION: FUNDSTÜCK SPEICHERN
 # -------------------------
 
 if st.button("Fundstück speichern"):
 
     if uploaded_file is None:
         st.error("Bitte ein Bild hochladen")
-
     else:
-
         image = Image.open(uploaded_file)
 
-        # YOLO Analyse
+        # KI-Kategorie
         kategorie = detect_object(image)
 
+        # Eindeutiger Dateiname
         filename = f"{uuid.uuid4()}.jpg"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
 
+        # Bild speichern
         image.save(filepath)
 
         # Daten laden
@@ -115,12 +113,9 @@ with open(DATA_FILE, "r") as f:
     items = json.load(f)
 
 for item in reversed(items):
-
     st.image(item["bild"], width=200)
-
     st.write("Kategorie:", item["kategorie"])
     st.write("Beschreibung:", item["beschreibung"])
     st.write("Fundort:", item["fundort"])
     st.write("Status:", item["status"])
-
     st.markdown("---")
